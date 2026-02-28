@@ -1,73 +1,27 @@
 package com.itheima.backend.model.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.baomidou.mybatisplus.annotation.TableName;
-import java.util.Date;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
-/**
- * 用户
- * @TableName user
- */
-@TableName(value ="user")
 @Data
+@TableName("user")
 public class User {
-    /**
-     * id
-     */
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 账号
-     */
+    @TableField("userAccount")
     private String userAccount;
 
-    /**
-     * 密码
-     */
+    @TableField("userPassword")
     private String userPassword;
 
-    /**
-     * 用户昵称
-     */
+    @TableField("userName")
     private String userName;
 
-    /**
-     * 用户头像
-     */
-    private String userAvatar;
+    @TableField("userRole")
+    private String userRole;   // ✅ 新增
 
-    /**
-     * 用户简介
-     */
-    private String userProfile;
-
-    /**
-     * 用户角色：user/admin
-     */
-    private String userRole;
-
-    /**
-     * 编辑时间
-     */
-    private Date editTime;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
-
-    /**
-     * 是否删除
-     */
+    @TableField("isDelete")
     @TableLogic
     private Integer isDelete;
 }
