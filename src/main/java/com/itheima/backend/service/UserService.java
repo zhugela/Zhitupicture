@@ -1,11 +1,14 @@
 package com.itheima.backend.service;
 
-import com.itheima.backend.model.dto.UserRegisterRequest;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.itheima.backend.model.dto.user.UserQueryRequest;
 import com.itheima.backend.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.itheima.backend.model.vo.LoginUserVO;
+import com.itheima.backend.model.vo.UserVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
 * @author 26228
@@ -24,7 +27,7 @@ public interface UserService extends IService<User> {
     /**
      * 用户注册
      *
-     * @param userRegisterRequest 用户注册请求体
+     *
      * @return 新用户 id
      */
     long userRegister(String userAccount, String userPassword, String checkPassword);
@@ -38,6 +41,8 @@ public interface UserService extends IService<User> {
      */
     LoginUserVO userLogin(String userAccount, String userPassword, HttpServletRequest request);
 
+    QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
+
     String getEncryptPassword(String userPassword);
 
     LoginUserVO getLoginUserVO(User user);
@@ -48,5 +53,24 @@ public interface UserService extends IService<User> {
      * @return
      */
     User getLoginUser(HttpServletRequest request);
+    /**
+     * 用户注销
+     */
+    boolean userLogout(HttpServletRequest request);
+    /*
+    获得脱敏后的登录用户信息
+     */
+    UserVO getUserVO(User user);
+    /*
+    获得脱敏后的用户列表
+     */
+    List<UserVO>  getUserVOList(List<User> userList);
+    /**
+     * 是否为管理员
+     *
+     * @param user
+     * @return
+     */
+    boolean isAdmin(User user);
 
 }

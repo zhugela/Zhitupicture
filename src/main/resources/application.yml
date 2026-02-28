@@ -3,6 +3,9 @@ server:
   servlet:
     context-path: /api
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
   application:
     name: yu-picture-backend
 # 数据库配置
@@ -11,6 +14,8 @@ spring:
     url: jdbc:mysql://localhost:3306/picture
     username: root
     password: liang
+    profiles:
+      active: local
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
@@ -33,4 +38,6 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.itheima.backend.controller
+
+
 
