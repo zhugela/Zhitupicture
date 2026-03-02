@@ -7,6 +7,7 @@ import com.itheima.backend.common.ResultUtils;
 import com.itheima.backend.constant.UserConstant;
 import com.itheima.backend.exception.BusinessException;
 import com.itheima.backend.exception.ErrorCode;
+import com.itheima.backend.exception.ThrowUtils;
 import com.itheima.backend.manager.CosManager;
 
 import com.github.xiaoymin.knife4j.annotations.ApiOperationSupport;
@@ -14,6 +15,7 @@ import com.github.xiaoymin.knife4j.annotations.ApiSupport;
 import com.qcloud.cos.model.COSObject;
 import com.qcloud.cos.model.COSObjectInputStream;
 import com.qcloud.cos.utils.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +24,10 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 /**
  * 文件接口
@@ -44,13 +50,17 @@ public class FileController {
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     @PostMapping("/test/upload")
     public BaseResponse<String> testUploadFile(@RequestPart("file") MultipartFile multipartFile) {
+        ThrowUtils.throwIf(multipartFile == null || multipartFile.isEmpty(), ErrorCode.PARAM_ERROR, "上传文件不能为空");
         // 文件目录
         String filename = multipartFile.getOriginalFilename();
-        String filepath = String.format("/test/%s", filename);
+        String suffix = filename != null && filename.contains(".")
+                ? filename.substring(filename.lastIndexOf('.'))
+                : ".tmp";
+        String filepath = String.format("/test/%s%s", UUID.randomUUID(), suffix);
         File file = null;
         try {
             // 上传文件
-            file = File.createTempFile(filepath, null);
+            file = Files.createTempFile("upload-", suffix).toFile();
             multipartFile.transferTo(file);
             cosManager.putObject(filepath, file);
             // 返回可访问地址
@@ -77,6 +87,7 @@ public class FileController {
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     @GetMapping("/test/download/")
     public void testDownloadFile(String filepath, HttpServletResponse response) throws IOException {
+        ThrowUtils.throwIf(StringUtils.isBlank(filepath), ErrorCode.PARAM_ERROR, "文件路径不能为空");
         COSObjectInputStream cosObjectInput = null;
         try {
             COSObject cosObject = cosManager.getObject(filepath);
@@ -85,7 +96,8 @@ public class FileController {
             byte[] bytes = IOUtils.toByteArray(cosObjectInput);
             // 设置响应头
             response.setContentType("application/octet-stream;charset=UTF-8");
-            response.setHeader("Content-Disposition", "attachment; filename=" + filepath);
+            String downloadName = URLEncoder.encode(filepath.substring(filepath.lastIndexOf('/') + 1), StandardCharsets.UTF_8.name());
+            response.setHeader("Content-Disposition", "attachment; filename=" + downloadName);
             // 写入响应
             response.getOutputStream().write(bytes);
             response.getOutputStream().flush();
