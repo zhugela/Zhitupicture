@@ -1,5 +1,6 @@
 package com.itheima.backend.controller;
 
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.itheima.backend.annotation.AuthCheck;
 
 import com.itheima.backend.common.BaseResponse;
@@ -15,7 +16,7 @@ import com.github.xiaoymin.knife4j.annotations.ApiSupport;
 import com.qcloud.cos.model.COSObject;
 import com.qcloud.cos.model.COSObjectInputStream;
 import com.qcloud.cos.utils.IOUtils;
-import org.apache.commons.lang3.StringUtils;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
