@@ -8,14 +8,22 @@ spring:
       max-file-size: 10MB
   application:
     name: yu-picture-backend
+  profiles:
+    active: local
+  # Redis 配置
+  redis:
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+    timeout: 5000
+    password: 123456
+
 # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/picture
     username: root
     password: liang
-    profiles:
-      active: local
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
