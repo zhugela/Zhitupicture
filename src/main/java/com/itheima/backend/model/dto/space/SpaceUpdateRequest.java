@@ -1,0 +1,32 @@
+package com.itheima.backend.model.dto.space;
+
+import lombok.Data;
+
+import java.io.Serializable;
+
+@Data
+public class SpaceUpdateRequest implements Serializable {
+    /**
+     * id
+     */
+    private Long id;
+    /**
+     * 空间名
+     */
+    private String spaceName;
+    /**
+     * 空间级别
+     */
+    private Integer spaceLevel;
+    /**
+     * 空间图片的最大总大小
+     */
+    private Long maxSize;
+
+    /**
+     * 空间图片的最大数量
+     */
+    private Integer maxCount;
+
+    private static final long serialVersionUID = 1L;
+}

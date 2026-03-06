@@ -60,3 +60,50 @@ CREATE INDEX idx_reviewStatus ON picture (reviewStatus);
 ALTER TABLE picture
     -- 添加新列
     ADD COLUMN thumbnailUrl varchar(512) NULL COMMENT '缩略图 url';
+
+create table if not exists space
+(
+    -- 表的主键 ID，自增列
+    -- bigint: 数据类型，支持较大的整数值（范围：-9223372036854775808 到 9223372036854775807）
+    -- auto_increment: 自动递增，每次插入新记录时自动生成唯一值
+    -- primary key: 主键约束，确保列值唯一且非空
+    -- comment 'id': 列注释，说明该列的用途
+    id      bigint auto_increment primary key comment 'id',
+    -- 空间名称字段，用于存储图片空间的名称标识
+    -- varchar(128): 可变长度字符串，最大 128 个字符
+    -- not null: 非空约束，确保每个空间都有名称
+    -- comment '空间名称': 列注释，说明该列存储空间名称信息
+    spaceName varchar(128) not null comment '空间名称',
+
+    spaceLevel int default 0 not null comment '空间等级',
+
+    maxSize bigint default 0 not null comment '空间图片的最大总大小',
+
+    maxCount int default 0 not null comment '空间的最大图片数量',
+
+    totalSize bigint default 0 not null comment '当前空间下的图片总大小',
+
+    userId bigint not null comment '创建用户Id',
+
+    createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+
+    editTime datetime default CURRENT_TIMESTAMP not null comment '编辑时间',
+
+    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+
+    isDelete tinyint default 0 not null comment '是否删除',
+    -- 添加索引
+    INDEX idx_spaceName (spaceName),
+    INDEX idx_userId (userId),
+    INDEX idx_spaceLevel (spaceLevel)
+
+
+
+)COMMENT '图片空间' collate = utf8mb4_unicode_ci;
+
+-- 添加新列
+ALTER TABLE space
+    ADD COLUMN spaceId bigint NULL COMMENT '空间 id';
+
+-- 创建索引
+CREATE INDEX idx_spaceId ON space (spaceId);
