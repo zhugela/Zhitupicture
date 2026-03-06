@@ -10,6 +10,7 @@ import com.itheima.backend.model.dto.picture.PictureUploadRequest;
 import com.itheima.backend.model.entity.Picture;
 import com.itheima.backend.model.entity.User;
 import com.itheima.backend.model.vo.PictureVO;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -49,4 +50,6 @@ public interface PictureService extends IService<Picture> {
             User loginUser
     );
 
+    @Async
+    void clearPictureFile(Picture oldPicture);
 }
