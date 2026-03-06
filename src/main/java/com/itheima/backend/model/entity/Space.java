@@ -50,6 +50,12 @@ public class Space implements Serializable {
     private Long totalSize;
 
     /**
+     * 当前空间下的图片总数
+     */
+    @TableField("totalCount")
+    private Integer totalCount;
+
+    /**
      * 创建用户 Id
      */
     @TableField("userId")
@@ -81,9 +87,9 @@ public class Space implements Serializable {
     private Integer isDelete;
 
     /**
-     * 空间 id
+     * 空间 id（用于多级空间）
      */
-    @TableField("spaceId")
+    @TableField("space_id")
     private Long spaceId;
 
     @TableField(exist = false)

@@ -11,17 +11,17 @@
             <result property="maxSize" column="maxSize" jdbcType="BIGINT"/>
             <result property="maxCount" column="maxCount" jdbcType="INTEGER"/>
             <result property="totalSize" column="totalSize" jdbcType="BIGINT"/>
+            <result property="totalCount" column="totalCount" jdbcType="INTEGER"/>
             <result property="userId" column="userId" jdbcType="BIGINT"/>
             <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
             <result property="editTime" column="editTime" jdbcType="TIMESTAMP"/>
             <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
             <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
-            <result property="spaceId" column="spaceId" jdbcType="BIGINT"/>
+            <result property="spaceId" column="space_id" jdbcType="BIGINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,spaceName,spaceLevel,maxSize,maxCount,totalSize,
-        userId,createTime,editTime,updateTime,isDelete,
-        spaceId
+        id,spaceName,spaceLevel,maxSize,maxCount,totalSize,totalCount,
+        userId,createTime,editTime,updateTime,isDelete,space_id
     </sql>
 </mapper>

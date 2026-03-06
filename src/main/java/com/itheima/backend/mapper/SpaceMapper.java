@@ -1,6 +1,6 @@
 package com.itheima.backend.mapper;
 
-import generator.domain.Space;
+import com.itheima.backend.model.entity.Space;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

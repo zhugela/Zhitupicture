@@ -3,7 +3,7 @@ package com.itheima.backend.model.enums;
 import lombok.Getter;
 
 @Getter
-public enum SpaceLEvelEnum {
+public enum SpaceLevelEnum {
     COMMON("普通版", 0,100,100L*1024*1024),
     PRO("专业版", 1,1000,1000L*1024*1024),
     ENTERPRISE("企业版", 2,10000,10000L*1024*1024);
@@ -12,7 +12,7 @@ public enum SpaceLEvelEnum {
 
     private final int value;
 
-    private final Integer maxCount;
+    private final int maxCount;
 
     private final Long maxSize;
 
@@ -20,7 +20,7 @@ public enum SpaceLEvelEnum {
     /*
         * 构造函数
      */
-    SpaceLEvelEnum(String text, int value, Integer maxCount, Long maxSize) {
+    SpaceLevelEnum(String text, int value, int maxCount, Long maxSize) {
         this.text = text;
         this.value = value;
         this.maxCount = maxCount;
@@ -30,11 +30,11 @@ public enum SpaceLEvelEnum {
     /**
      * 根据 value 获取枚举
      */
-    public static SpaceLEvelEnum getEnumByValue(Integer value) {
+    public static SpaceLevelEnum getEnumByValue(Integer value) {
         if (value == null) {
             return null;
         }
-        for (SpaceLEvelEnum spaceLEvelEnum : SpaceLEvelEnum.values()) {
+        for (SpaceLevelEnum spaceLEvelEnum : SpaceLevelEnum.values()) {
             if (spaceLEvelEnum.value == value) {
                 return spaceLEvelEnum;
             }

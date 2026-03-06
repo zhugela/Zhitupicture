@@ -115,6 +115,12 @@ public class Picture implements Serializable {
      */
     private String thumbnailUrl;
 
+    /**
+     * 空间 ID，null 表示公共图库
+     */
+    @TableField("space_id")
+    private Long spaceId;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;  
 }

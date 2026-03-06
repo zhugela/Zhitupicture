@@ -19,6 +19,7 @@
             <result property="picScale" column="picScale" jdbcType="DOUBLE"/>
             <result property="picFormat" column="picFormat" jdbcType="VARCHAR"/>
             <result property="userId" column="userId" jdbcType="BIGINT"/>
+            <result property="spaceId" column="space_id" jdbcType="BIGINT"/>
             <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
             <result property="editTime" column="editTime" jdbcType="TIMESTAMP"/>
             <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
@@ -33,7 +34,7 @@
         id,url,thumbnailUrl,name,
         introduction,category,tags,
         picSize,picWidth,picHeight,
-        picScale,picFormat,userId,spaceId,
+        picScale,picFormat,userId,space_id,
         createTime,editTime,updateTime,
         isDelete,reviewStatus,reviewMessage,
         reviewerId,reviewTime

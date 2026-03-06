@@ -107,3 +107,5 @@ ALTER TABLE space
 
 -- 创建索引
 CREATE INDEX idx_spaceId ON space (spaceId);
+
+-- 图片表增加spaceId字段
