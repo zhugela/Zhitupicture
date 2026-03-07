@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.itheima.backend.annotation.AuthCheck;
+import com.itheima.backend.api.imagesearch.ImageSearchApiFacade;
+import com.itheima.backend.api.imagesearch.model.ImageSearchResult;
 import com.itheima.backend.common.BaseResponse;
 import com.itheima.backend.common.DeleteRequest;
 import com.itheima.backend.common.ResultUtils;
@@ -331,5 +333,19 @@ public class PictureController {
         // 获取封装类
         return ResultUtils.success(pictureVOPage);
     }
+    /**
+     * 以图搜图
+     */
+    @PostMapping("/search/picture")
+    public BaseResponse<List<ImageSearchResult>> searchPictureByPicture(@RequestBody SearchPictureByPictureRequest searchPictureByPictureRequest) {
+        ThrowUtils.throwIf(searchPictureByPictureRequest == null, ErrorCode.PARAM_ERROR);
+        Long pictureId = searchPictureByPictureRequest.getPictureId();
+        ThrowUtils.throwIf(pictureId == null || pictureId <= 0, ErrorCode.PARAM_ERROR);
+        Picture oldPicture = pictureService.getById(pictureId);
+        ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        List<ImageSearchResult> resultList = ImageSearchApiFacade.searchImage(oldPicture.getUrl());
+        return ResultUtils.success(resultList);
+    }
+
 
 }
