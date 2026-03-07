@@ -1,6 +1,7 @@
 package com.itheima.backend.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
@@ -98,8 +99,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             pictureId = pictureUploadRequest.getId();
         }
         // 如果是更新图片，需要校验图片是否存在
+        Picture oldPicture = null;
         if (pictureId != null) {
-            Picture oldPicture = this.getById(pictureId);
+            oldPicture = this.getById(pictureId);
             ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
             // 仅本人或管理员可编辑
             if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
@@ -154,7 +156,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             picName = pictureUploadRequest.getPicName();
         }
         picture.setUrl(uploadPictureResult.getUrl());
-       picture.setName(uploadPictureResult.getPicName());
+        picture.setName(picName);
         picture.setPicSize(uploadPictureResult.getPicSize());
         picture.setPicWidth(uploadPictureResult.getPicWidth());
         picture.setPicHeight(uploadPictureResult.getPicHeight());
@@ -176,34 +178,26 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         }
 // 开启事务
         Long finalSpaceId = spaceId;
+        Picture finalOldPicture = oldPicture;
         transactionTemplate.execute(status -> {
             boolean result = this.saveOrUpdate(picture);
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
             if (finalSpaceId != null) {
+                long sizeDelta = picture.getPicSize();
+                long countDelta = 1;
+                if (finalOldPicture != null) {
+                    sizeDelta = picture.getPicSize() - finalOldPicture.getPicSize();
+                    countDelta = 0;
+                }
                 boolean update = spaceService.lambdaUpdate()
                         .eq(Space::getId, finalSpaceId)
-                        .setSql("totalSize = totalSize + " + picture.getPicSize())
-                        .setSql("totalCount = totalCount + 1")
+                        .setSql("totalSize = totalSize + " + sizeDelta)
+                        .setSql("totalCount = totalCount + " + countDelta)
                         .update();
                 ThrowUtils.throwIf(!update, ErrorCode.OPERATION_ERROR, "额度更新失败");
             }
             return picture;
         });
-
-
-// 构造要入库的图片信息
-
-        picture.setUrl(uploadPictureResult.getUrl());
-
-        if (pictureUploadRequest != null && StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
-            picName = pictureUploadRequest.getPicName();
-        }
-        picture.setName(picName);
-
-
-
-        boolean result = this.saveOrUpdate(picture);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
         return PictureVO.objToVo(picture);
     }
 
@@ -252,7 +246,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
         queryWrapper.eq(ObjUtil.isNotEmpty(spaceId), "space_id", spaceId);
-        queryWrapper.isNull(nullSpaceId, "space_id");
+        queryWrapper.isNull(BooleanUtil.isTrue(nullSpaceId), "space_id");
         queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
         queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
         queryWrapper.like(StrUtil.isNotBlank(picFormat), "picFormat", picFormat);
@@ -489,12 +483,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             }
             return true;
         });
-// 异步清理文件
-        this.clearPictureFile(oldPicture);
-
-        // 操作数据库
-        boolean result = this.removeById(pictureId);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         // 异步清理文件
         this.clearPictureFile(oldPicture);
     }
