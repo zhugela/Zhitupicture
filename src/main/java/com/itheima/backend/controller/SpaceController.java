@@ -218,8 +218,13 @@ public class SpaceController {
         String lock = String.valueOf(userId).intern();
         synchronized (lock) {
             Long newSpaceId = transactionTemplate.execute(status -> {
-                boolean exists = spaceService.lambdaQuery().eq(Space::getUserId, userId).exists();
-                ThrowUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "每个用户仅能有一个私有空间");
+                // 判断是否已有同类型的空间
+                boolean exists = spaceService.lambdaQuery()
+                        .eq(Space::getUserId, userId)
+                        .eq(Space::getSpaceType, space.getSpaceType())
+                        .exists();
+                // 如果已有同类型空间，就不能再创建
+                ThrowUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "每个用户每类空间只能创建一个");
                 // 写入数据库
                 boolean result = spaceService.save(space);
                 ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
