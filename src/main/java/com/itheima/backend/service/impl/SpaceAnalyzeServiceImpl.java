@@ -9,14 +9,12 @@ import com.itheima.backend.exception.BusinessException;
 import com.itheima.backend.exception.ErrorCode;
 import com.itheima.backend.exception.ThrowUtils;
 import com.itheima.backend.mapper.SpaceMapper;
-import com.itheima.backend.model.dto.space.analyze.SpaceAnalyzeRequest;
-import com.itheima.backend.model.dto.space.analyze.SpaceCategoryAnalyzeRequest;
-import com.itheima.backend.model.dto.space.analyze.SpaceTagAnalyzeRequest;
-import com.itheima.backend.model.dto.space.analyze.SpaceUsageAnalyzeRequest;
+import com.itheima.backend.model.dto.space.analyze.*;
 import com.itheima.backend.model.entity.Picture;
 import com.itheima.backend.model.entity.Space;
 import com.itheima.backend.model.entity.User;
 import com.itheima.backend.model.vo.space.analyze.SpaceCategoryAnalyzeResponse;
+import com.itheima.backend.model.vo.space.analyze.SpaceSizeAnalyzeResponse;
 import com.itheima.backend.model.vo.space.analyze.SpaceTagAnalyzeResponse;
 import com.itheima.backend.model.vo.space.analyze.SpaceUsageAnalyzeResponse;
 import com.itheima.backend.service.PictureService;
@@ -26,6 +24,7 @@ import com.itheima.backend.service.UserService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,13 +38,7 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>  im
     private UserService userService;
     @Resource
     private PictureService pictureService;
-    /**
-     * 获取空间使用分析数据
-     *
-     * @param spaceUsageAnalyzeRequest SpaceUsageAnalyzeRequest 请求参数
-     * @param loginUser                当前登录用户
-     * @return SpaceUsageAnalyzeResponse 分析结果
-     */
+
 
     private static void fillAnalyzeQueryWrapper(SpaceAnalyzeRequest spaceAnalyzeRequest, QueryWrapper<Picture> queryWrapper) {
         if (spaceAnalyzeRequest.isQueryAll()) {
@@ -179,5 +172,36 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>  im
                 .map(entry -> new SpaceTagAnalyzeResponse(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
     }
+    @Override
+    public List<SpaceSizeAnalyzeResponse> getSpaceSizeAnalyze(SpaceSizeAnalyzeRequest spaceSizeAnalyzeRequest, User loginUser) {
+        ThrowUtils.throwIf(spaceSizeAnalyzeRequest == null, ErrorCode.PARAM_ERROR);
+
+        // 检查权限
+        checkSpaceAnalyzeAuth(spaceSizeAnalyzeRequest, loginUser);
+
+        // 构造查询条件
+        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+        fillAnalyzeQueryWrapper(spaceSizeAnalyzeRequest, queryWrapper);
+
+        // 查询所有符合条件的图片大小
+        queryWrapper.select("picSize");
+        List<Long> picSizes = pictureService.getBaseMapper().selectObjs(queryWrapper)
+                .stream()
+                .map(size -> ((Number) size).longValue())
+                .collect(Collectors.toList());
+
+        // 定义分段范围，注意使用有序 Map
+        Map<String, Long> sizeRanges = new LinkedHashMap<>();
+        sizeRanges.put("<100KB", picSizes.stream().filter(size -> size < 100 * 1024).count());
+        sizeRanges.put("100KB-500KB", picSizes.stream().filter(size -> size >= 100 * 1024 && size < 500 * 1024).count());
+        sizeRanges.put("500KB-1MB", picSizes.stream().filter(size -> size >= 500 * 1024 && size < 1 * 1024 * 1024).count());
+        sizeRanges.put(">1MB", picSizes.stream().filter(size -> size >= 1 * 1024 * 1024).count());
+
+        // 转换为响应对象
+        return sizeRanges.entrySet().stream()
+                .map(entry -> new SpaceSizeAnalyzeResponse(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
 
 }

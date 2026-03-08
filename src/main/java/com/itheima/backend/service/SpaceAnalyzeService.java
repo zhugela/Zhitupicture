@@ -2,11 +2,13 @@ package com.itheima.backend.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.itheima.backend.model.dto.space.analyze.SpaceCategoryAnalyzeRequest;
+import com.itheima.backend.model.dto.space.analyze.SpaceSizeAnalyzeRequest;
 import com.itheima.backend.model.dto.space.analyze.SpaceTagAnalyzeRequest;
 import com.itheima.backend.model.dto.space.analyze.SpaceUsageAnalyzeRequest;
 import com.itheima.backend.model.entity.Space;
 import com.itheima.backend.model.entity.User;
 import com.itheima.backend.model.vo.space.analyze.SpaceCategoryAnalyzeResponse;
+import com.itheima.backend.model.vo.space.analyze.SpaceSizeAnalyzeResponse;
 import com.itheima.backend.model.vo.space.analyze.SpaceTagAnalyzeResponse;
 import com.itheima.backend.model.vo.space.analyze.SpaceUsageAnalyzeResponse;
 
@@ -25,4 +27,6 @@ public interface SpaceAnalyzeService extends IService<Space> {
     List<SpaceCategoryAnalyzeResponse> getSpaceCategoryAnalyze(SpaceCategoryAnalyzeRequest spaceCategoryAnalyzeRequest, User loginUser);
 
     List<SpaceTagAnalyzeResponse> getSpaceTagAnalyze(SpaceTagAnalyzeRequest spaceTagAnalyzeRequest, User loginUser);
+
+    List<SpaceSizeAnalyzeResponse> getSpaceSizeAnalyze(SpaceSizeAnalyzeRequest spaceSizeAnalyzeRequest, User loginUser);
 }
