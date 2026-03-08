@@ -1,5 +1,6 @@
 package com.itheima.backend.model.dto.space;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.itheima.backend.common.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,5 +28,11 @@ public class SpaceQueryRequest extends PageRequest implements Serializable {
      * 空间级别
      */
     private Integer spaceLevel;
-    private static final long serialVersionUID = 1L;
+     /*
+     * 空间类型：0-私有 1-团队
+     */
+    private Integer spaceType;
+
+    @TableField(exist = false)
+        private static final long serialVersionUID = 1L;
 }

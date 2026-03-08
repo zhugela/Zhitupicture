@@ -14,6 +14,7 @@ import com.itheima.backend.model.dto.space.SpaceQueryRequest;
 import com.itheima.backend.model.entity.Space;
 import com.itheima.backend.model.entity.User;
 import com.itheima.backend.model.enums.SpaceLevelEnum;
+import com.itheima.backend.model.enums.SpaceTypeEnum;
 import com.itheima.backend.model.vo.SpaceVO;
 import com.itheima.backend.model.vo.UserVO;
 import com.itheima.backend.service.SpaceService;
@@ -48,7 +49,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         String spaceName = space.getSpaceName();
         Integer spaceLevel = space.getSpaceLevel();
         SpaceLevelEnum spaceLevelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
-        // 要创建
+        Integer spaceType = space.getSpaceType();
+        SpaceTypeEnum spaceTypeEnum = SpaceTypeEnum.getEnumByValue(spaceType);
+        // 创建时校验
         if (add) {
             if (StrUtil.isBlank(spaceName)) {
                 throw new BusinessException(ErrorCode.PARAM_ERROR, "空间名称不能为空");
@@ -56,13 +59,21 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             if (spaceLevel == null) {
                 throw new BusinessException(ErrorCode.PARAM_ERROR, "空间级别不能为空");
             }
+            if (spaceType == null) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "空间类别不能为空");
+            }
         }
-        // 修改数据时，如果要改空间级别
+        // 修改数据时，空间名称进行校验
+        if (StrUtil.isNotBlank(spaceName) && spaceName.length() > 30) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "空间名称过长");
+        }
+        // 修改数据时，空间级别进行校验
         if (spaceLevel != null && spaceLevelEnum == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "空间级别不存在");
         }
-        if (StrUtil.isNotBlank(spaceName) && spaceName.length() > 30) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR, "空间名称过长");
+        // 修改数据时，空间类别进行校验
+        if (spaceType != null && spaceTypeEnum == null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "空间类别不存在");
         }
     }
 
@@ -139,13 +150,20 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         BeanUtils.copyProperties(spaceAddRequest, space);
         // 默认值
         if (StrUtil.isBlank(spaceAddRequest.getSpaceName())) {
-            space.setSpaceName("默认空间");
+            spaceAddRequest.setSpaceName("默认空间");
         }
         if (spaceAddRequest.getSpaceLevel() == null) {
-            space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
+            spaceAddRequest.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
         }
-        // 填充数据
+        if (spaceAddRequest.getSpaceType() == null) {
+            spaceAddRequest.setSpaceType(SpaceTypeEnum.PRIVATE.getValue());
+        }
+// 在此处将实体类和 DTO 进行转换
+
+        BeanUtils.copyProperties(spaceAddRequest, space);
+// 填充数据
         this.fillSpaceBySpaceLevel(space);
+
         // 数据校验
         this.validSpace(space, true);
         Long userId = loginUser.getId();
@@ -158,12 +176,16 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         String lock = String.valueOf(userId).intern();
         synchronized (lock) {
             Long newSpaceId = transactionTemplate.execute(status -> {
-                boolean exists = this.lambdaQuery().eq(Space::getUserId, userId).exists();
-                ThrowUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "每个用户仅能有一个私有空间");
-                // 写入数据库
+                // 判断是否已有空间
+                boolean exists = this.lambdaQuery()
+                        .eq(Space::getUserId, userId)
+                        .eq(Space::getSpaceType, space.getSpaceType())
+                        .exists();
+                // 如果已有空间，就不能再创建
+                ThrowUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "每个用户每类空间只能创建一个");
+                // 创建
                 boolean result = this.save(space);
-                ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-                // 返回新写入的数据 id
+                ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "保存空间到数据库失败");
                 return space.getId();
             });
             // 返回结果是包装类，可以做一些处理
