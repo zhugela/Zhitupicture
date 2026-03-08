@@ -14,6 +14,7 @@ import com.itheima.backend.constant.UserConstant;
 import com.itheima.backend.exception.BusinessException;
 import com.itheima.backend.exception.ErrorCode;
 import com.itheima.backend.exception.ThrowUtils;
+import com.itheima.backend.manager.auth.SpaceUserAuthManager;
 import com.itheima.backend.model.dto.picture.PictureEditRequest;
 import com.itheima.backend.model.dto.space.*;
 import com.itheima.backend.model.entity.Space;
@@ -58,6 +59,8 @@ public class SpaceController {
     private StringRedisTemplate stringRedisTemplate;
     @Autowired
     private PictureService pictureService;
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
 
 
@@ -250,38 +253,17 @@ public class SpaceController {
     @GetMapping("/get/vo")
     public BaseResponse<SpaceVO> getSpaceVOById(long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAM_ERROR);
-
+        // 查询数据库
         Space space = spaceService.getById(id);
-        ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
-
+        ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
+        SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
         User loginUser = userService.getLoginUser(request);
-
-        if (!space.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
-        }
-
-        SpaceVO spaceVO = SpaceVO.objToVo(space);
-
-        Long userId = space.getUserId();
-        if (userId != null) {
-            User user = userService.getById(userId);
-            if (user != null) {
-                spaceVO.setUser(userService.getUserVO(user));
-            }
-        }
-
-        // 这里补权限列表
-        List<String> permissionList = Arrays.asList(
-                "spaceUser:manage",
-                "picture:view",
-                "picture:upload",
-                "picture:edit",
-                "picture:delete"
-        );
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
         spaceVO.setPermissionList(permissionList);
-
+        // 获取封装类
         return ResultUtils.success(spaceVO);
     }
+
 
     @Resource
     private TransactionTemplate transactionTemplate;

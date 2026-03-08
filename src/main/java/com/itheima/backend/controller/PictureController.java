@@ -19,6 +19,11 @@ import com.itheima.backend.constant.UserConstant;
 import com.itheima.backend.exception.BusinessException;
 import com.itheima.backend.exception.ErrorCode;
 import com.itheima.backend.exception.ThrowUtils;
+import com.itheima.backend.manager.auth.SpaceUserAuthManager;
+import com.itheima.backend.manager.auth.StpKit;
+import com.itheima.backend.manager.auth.annotation.SaSpaceCheckPermission;
+import com.itheima.backend.manager.auth.model.SpaceUserAuthConfig;
+import com.itheima.backend.manager.auth.model.SpaceUserPermissionConstant;
 import com.itheima.backend.model.dto.picture.*;
 import com.itheima.backend.model.entity.Picture;
 import com.itheima.backend.model.entity.Space;
@@ -54,9 +59,13 @@ public class PictureController {
 
     @Resource
     private PictureService pictureService;
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
 
     @Resource
     private SpaceService spaceService;
+    @Resource
+    private ImageSearchApiFacade imageSearchApiFacade;
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -78,7 +87,7 @@ public class PictureController {
      * 上传图片（可重新上传）
      */
     @PostMapping("/upload")
-
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
@@ -92,6 +101,7 @@ public class PictureController {
      * 删除图片
      */
     @PostMapping("/delete")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_DELETE)
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAM_ERROR);
@@ -106,6 +116,7 @@ public class PictureController {
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest, HttpServletRequest request) {
         if (pictureUpdateRequest == null || pictureUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAM_ERROR);
@@ -135,6 +146,7 @@ public class PictureController {
      */
     @GetMapping("/get")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+
     public BaseResponse<Picture> getPictureById(long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAM_ERROR);
         // 查询数据库
@@ -157,31 +169,27 @@ public class PictureController {
     @GetMapping("/get/vo")
     public BaseResponse<PictureVO> getPictureVOById(long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAM_ERROR);
-
-        // 1. 构建缓存 key
-        String cacheKey = "picture:vo:" + id;
-
-        // 2. 从 Caffeine 本地缓存查询
-        Object cachedObj = LOCAL_CACHE.getIfPresent(cacheKey);
-        if (cachedObj != null) {
-            log.info("Caffeine 缓存命中：{}", cacheKey);
-            PictureVO cachedPictureVO = (PictureVO) cachedObj;
-            return ResultUtils.success(cachedPictureVO);
-        }
-
-        // 3. 缓存未命中，查询数据库
+        // 查询数据库
         Picture picture = pictureService.getById(id);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
-
-        // 4. 获取封装类
+        // 空间的图片，需要校验权限
+        Space space = null;
+        Long spaceId = picture.getSpaceId();
+        if (spaceId != null) {
+            boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
+            ThrowUtils.throwIf(!hasPermission, ErrorCode.NO_AUTH_ERROR);
+            space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+        }
+        // 获取权限列表
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
         PictureVO pictureVO = pictureService.getPictureVO(picture, request);
-
-        // 5. 存入 Caffeine 缓存
-        LOCAL_CACHE.put(cacheKey, pictureVO);
-        log.info("已存入 Caffeine 缓存：{}", cacheKey);
-
+        pictureVO.setPermissionList(permissionList);
+        // 获取封装类
         return ResultUtils.success(pictureVO);
     }
+
 
     /**
      * 分页获取图片列表（仅管理员可用）
@@ -238,6 +246,7 @@ public class PictureController {
      * 编辑图片（给用户使用）
      */
     @PostMapping("/edit")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditRequest pictureEditRequest, HttpServletRequest request) {
         if (pictureEditRequest == null || pictureEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAM_ERROR);
@@ -268,6 +277,7 @@ public class PictureController {
      * 通过 URL 上传图片（可重新上传）
      */
     @PostMapping("/upload/url")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVO> uploadPictureByUrl(
             @RequestBody PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {
@@ -353,6 +363,7 @@ public class PictureController {
     }
 
     @PostMapping("/search/color")
+     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_VIEW)
     public BaseResponse<List<PictureVO>> searchPictureByColor(@RequestBody SearchPictureByColorRequest searchPictureByColorRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(searchPictureByColorRequest == null, ErrorCode.PARAM_ERROR);
         String picColor = searchPictureByColorRequest.getPicColor();
@@ -363,6 +374,7 @@ public class PictureController {
     }
 
     @PostMapping("/edit/batch")
+     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAM_ERROR);
         User loginUser = userService.getLoginUser(request);
@@ -373,6 +385,7 @@ public class PictureController {
      * 创建 AI 扩图任务
      */
     @PostMapping("/out_painting/create_task")
+     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<CreateOutPaintingTaskResponse> createPictureOutPaintingTask(
             @RequestBody CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest,
             HttpServletRequest request) {
