@@ -1,5 +1,6 @@
 package com.itheima.backend.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.ObjUtil;
@@ -8,6 +9,9 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.itheima.backend.api.aliyunai.AliYunAiApi;
+import com.itheima.backend.api.aliyunai.model.CreateOutPaintingTaskRequest;
+import com.itheima.backend.api.aliyunai.model.CreateOutPaintingTaskResponse;
 import com.itheima.backend.exception.BusinessException;
 import com.itheima.backend.exception.ErrorCode;
 import com.itheima.backend.exception.ThrowUtils;
@@ -70,6 +74,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     private SpaceService spaceService;
     @Resource
     private TransactionTemplate transactionTemplate;
+    @Resource
+    private AliYunAiApi aliYunAiApi;
 
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -622,6 +628,23 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             log.error("名称解析错误", e);
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "名称解析错误");
         }
+    }
+    @Override
+    public CreateOutPaintingTaskResponse createPictureOutPaintingTask(CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, User loginUser) {
+        // 获取图片信息
+        Long pictureId = createPictureOutPaintingTaskRequest.getPictureId();
+        Picture picture = Optional.ofNullable(this.getById(pictureId))
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_ERROR));
+        // 权限校验
+        checkPictureAuth(loginUser, picture);
+        // 构造请求参数
+        CreateOutPaintingTaskRequest taskRequest = new CreateOutPaintingTaskRequest();
+        CreateOutPaintingTaskRequest.Input input = new CreateOutPaintingTaskRequest.Input();
+        input.setImageUrl(picture.getUrl());
+        taskRequest.setInput(input);
+        BeanUtil.copyProperties(createPictureOutPaintingTaskRequest, taskRequest);
+        // 创建任务
+        return aliYunAiApi.createOutPaintingTask(taskRequest);
     }
 
 }

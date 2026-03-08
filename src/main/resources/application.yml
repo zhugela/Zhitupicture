@@ -47,6 +47,9 @@ knife4j:
         api-rule-resources:
           - com.itheima.backend.controller
 
+# 阿里云 AI 配置
+aliYunAi:
+  apiKey: sk-b87ba6eb68324da1a645b5999437cbc8
 
 
 

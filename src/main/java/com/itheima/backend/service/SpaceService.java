@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itheima.backend.model.dto.space.SpaceAddRequest;
 import com.itheima.backend.model.dto.space.SpaceQueryRequest;
+import com.itheima.backend.model.dto.space.analyze.SpaceUsageAnalyzeRequest;
 import com.itheima.backend.model.entity.Picture;
 
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -11,6 +12,7 @@ import com.itheima.backend.model.entity.Space;
 import com.itheima.backend.model.entity.User;
 import com.itheima.backend.model.vo.PictureVO;
 import com.itheima.backend.model.vo.SpaceVO;
+import com.itheima.backend.model.vo.space.analyze.SpaceUsageAnalyzeResponse;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -61,4 +63,12 @@ public interface SpaceService extends IService<Space> {
      * @param space 空间实体
      */
     void fillSpaceBySpaceLevel(Space space);
+    /**
+     * 校验空间权限
+     *
+     * @param loginUser
+     * @param space
+     */
+    void checkSpaceAuth(User loginUser, Space space);
+
 }
