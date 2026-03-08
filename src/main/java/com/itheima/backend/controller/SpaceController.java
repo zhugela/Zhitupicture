@@ -242,6 +242,42 @@ public class SpaceController {
         return ResultUtils.success(spaceLevelList);
     }
 
+    @GetMapping("/get/vo")
+    public BaseResponse<SpaceVO> getSpaceVOById(long id, HttpServletRequest request) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAM_ERROR);
+
+        Space space = spaceService.getById(id);
+        ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+
+        User loginUser = userService.getLoginUser(request);
+
+        if (!space.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "没有空间权限");
+        }
+
+        SpaceVO spaceVO = SpaceVO.objToVo(space);
+
+        Long userId = space.getUserId();
+        if (userId != null) {
+            User user = userService.getById(userId);
+            if (user != null) {
+                spaceVO.setUser(userService.getUserVO(user));
+            }
+        }
+
+        // 这里补权限列表
+        List<String> permissionList = Arrays.asList(
+                "spaceUser:manage",
+                "picture:view",
+                "picture:upload",
+                "picture:edit",
+                "picture:delete"
+        );
+        spaceVO.setPermissionList(permissionList);
+
+        return ResultUtils.success(spaceVO);
+    }
+
     @Resource
     private TransactionTemplate transactionTemplate;
 

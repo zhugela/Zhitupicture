@@ -85,12 +85,13 @@ public class Space implements Serializable {
     @TableField("isDelete")
     @TableLogic
     private Integer isDelete;
-
     /**
      * 空间 id（用于多级空间）
      */
     @TableField("space_id")
     private Long spaceId;
+    @TableField("space_type")
+    private Integer spaceType;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

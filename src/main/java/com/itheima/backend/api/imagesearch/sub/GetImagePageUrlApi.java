@@ -23,47 +23,62 @@ public class GetImagePageUrlApi {
      * @return
      */
     public static String getImagePageUrl(String imageUrl) {
-        // 1. 准备请求参数
         Map<String, Object> formData = new HashMap<>();
         formData.put("image", imageUrl);
         formData.put("tn", "pc");
         formData.put("from", "pc");
         formData.put("image_source", "PC_UPLOAD_URL");
-        // 获取当前时间戳
+
         long uptime = System.currentTimeMillis();
-        // 请求地址
         String url = "https://graph.baidu.com/upload?uptime=" + uptime;
 
         try {
-            // 2. 发送 POST 请求到百度接口
             HttpResponse response = HttpRequest.post(url)
+                    .header("acs-token", "1") // 先简单试，很多示例用随机 1 位字符串
+                    .header("User-Agent", "Mozilla/5.0")
+                    .header("Referer", "https://graph.baidu.com/")
                     .form(formData)
                     .timeout(5000)
                     .execute();
-            // 判断响应状态
-            if (HttpStatus.HTTP_OK != response.getStatus()) {
-                throw new BusinessException(ErrorCode.OPERATION_ERROR, "接口调用失败");
-            }
-            // 解析响应
-            String responseBody = response.body();
-            Map<String, Object> result = JSONUtil.toBean(responseBody, Map.class);
 
-            // 3. 处理响应结果
-            if (result == null || !Integer.valueOf(0).equals(result.get("status"))) {
-                throw new BusinessException(ErrorCode.OPERATION_ERROR, "接口调用失败");
+            if (HttpStatus.HTTP_OK != response.getStatus()) {
+                log.error("接口调用失败，HTTP 状态码：{}", response.getStatus());
+                throw new BusinessException(ErrorCode.OPERATION_ERROR,
+                        "接口调用失败，状态码：" + response.getStatus());
             }
-            Map<String, Object> data = (Map<String, Object>) result.get("data");
-            String rawUrl = (String) data.get("url");
-            // 对 URL 进行解码
-            String searchResultUrl = URLUtil.decode(rawUrl, StandardCharsets.UTF_8);
-            // 如果 URL 为空
-            if (searchResultUrl == null) {
-                throw new BusinessException(ErrorCode.OPERATION_ERROR, "未返回有效结果");
+
+            String responseBody = response.body();
+            log.info("请求 imageUrl={}", imageUrl);
+            log.info("百度以图搜图响应：{}", responseBody);
+
+            Map<String, Object> result = JSONUtil.toBean(responseBody, Map.class);
+            if (result == null) {
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "响应结果为空");
             }
-            return searchResultUrl;
+
+            String status = String.valueOf(result.get("status"));
+            if (!"0".equals(status)) {
+                String errorMsg = result.get("msg") != null ? result.get("msg").toString() : "未知错误";
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "接口调用失败：" + errorMsg);
+            }
+
+            Object dataObj = result.get("data");
+            if (!(dataObj instanceof Map)) {
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "未返回有效数据");
+            }
+
+            Map<String, Object> data = (Map<String, Object>) dataObj;
+            String rawUrl = String.valueOf(data.get("url"));
+            if (rawUrl == null || rawUrl.trim().isEmpty() || "null".equals(rawUrl)) {
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "未找到相似图片");
+            }
+
+            return URLUtil.decode(rawUrl, StandardCharsets.UTF_8);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("搜索失败", e);
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "搜索失败");
+            log.error("搜索失败，图片 URL: {}", imageUrl, e);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "搜索失败：" + e.getMessage());
         }
     }
 

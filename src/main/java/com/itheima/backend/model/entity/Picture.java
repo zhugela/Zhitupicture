@@ -120,6 +120,11 @@ public class Picture implements Serializable {
      */
     @TableField("space_id")
     private Long spaceId;
+    /**
+     * 图片主色调
+     */
+    private String picColor;
+
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;  

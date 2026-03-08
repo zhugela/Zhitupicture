@@ -16,5 +16,6 @@ public class SpaceAddRequest {
     /*
     序列 号
      */
+    private Integer spaceType;
     private static final long serialVersionUID = 1L;
 }
