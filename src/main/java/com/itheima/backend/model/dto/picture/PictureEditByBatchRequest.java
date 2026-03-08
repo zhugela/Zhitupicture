@@ -22,6 +22,11 @@ public class PictureEditByBatchRequest implements Serializable {
      * 分类
      */
     private String category;
+    /**
+     * 命名规则
+     */
+    private String nameRule;
+
 
     /**
      * 标签
