@@ -4,15 +4,10 @@ import com.itheima.backend.common.BaseResponse;
 import com.itheima.backend.common.ResultUtils;
 import com.itheima.backend.exception.ErrorCode;
 import com.itheima.backend.exception.ThrowUtils;
-import com.itheima.backend.model.dto.space.analyze.SpaceCategoryAnalyzeRequest;
-import com.itheima.backend.model.dto.space.analyze.SpaceSizeAnalyzeRequest;
-import com.itheima.backend.model.dto.space.analyze.SpaceTagAnalyzeRequest;
-import com.itheima.backend.model.dto.space.analyze.SpaceUsageAnalyzeRequest;
+import com.itheima.backend.model.dto.space.analyze.*;
+import com.itheima.backend.model.entity.Space;
 import com.itheima.backend.model.entity.User;
-import com.itheima.backend.model.vo.space.analyze.SpaceCategoryAnalyzeResponse;
-import com.itheima.backend.model.vo.space.analyze.SpaceSizeAnalyzeResponse;
-import com.itheima.backend.model.vo.space.analyze.SpaceTagAnalyzeResponse;
-import com.itheima.backend.model.vo.space.analyze.SpaceUsageAnalyzeResponse;
+import com.itheima.backend.model.vo.space.analyze.*;
 import com.itheima.backend.service.SpaceAnalyzeService;
 import com.itheima.backend.service.UserService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,6 +61,20 @@ public class SpaceAnalyzeController {
         ThrowUtils.throwIf(spaceSizeAnalyzeRequest == null, ErrorCode.PARAM_ERROR);
         User loginUser = userService.getLoginUser(request);
         List<SpaceSizeAnalyzeResponse> resultList = spaceAnalyzeService.getSpaceSizeAnalyze(spaceSizeAnalyzeRequest, loginUser);
+        return ResultUtils.success(resultList);
+    }
+    @PostMapping("/user")
+    public BaseResponse<List<SpaceUserAnalyzeResponse>> getSpaceUserAnalyze(@RequestBody SpaceUserAnalyzeRequest spaceUserAnalyzeRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceUserAnalyzeRequest == null, ErrorCode.PARAM_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        List<SpaceUserAnalyzeResponse> resultList = spaceAnalyzeService.getSpaceUserAnalyze(spaceUserAnalyzeRequest, loginUser);
+        return ResultUtils.success(resultList);
+    }
+    @PostMapping("/rank")
+    public BaseResponse<List<Space>> getSpaceRankAnalyze(@RequestBody SpaceRankAnalyzeRequest spaceRankAnalyzeRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceRankAnalyzeRequest == null, ErrorCode.PARAM_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        List<Space> resultList = spaceAnalyzeService.getSpaceRankAnalyze(spaceRankAnalyzeRequest, loginUser);
         return ResultUtils.success(resultList);
     }
 
