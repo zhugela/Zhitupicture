@@ -5,9 +5,11 @@ import com.itheima.backend.common.ResultUtils;
 import com.itheima.backend.exception.ErrorCode;
 import com.itheima.backend.exception.ThrowUtils;
 import com.itheima.backend.model.dto.space.analyze.SpaceCategoryAnalyzeRequest;
+import com.itheima.backend.model.dto.space.analyze.SpaceTagAnalyzeRequest;
 import com.itheima.backend.model.dto.space.analyze.SpaceUsageAnalyzeRequest;
 import com.itheima.backend.model.entity.User;
 import com.itheima.backend.model.vo.space.analyze.SpaceCategoryAnalyzeResponse;
+import com.itheima.backend.model.vo.space.analyze.SpaceTagAnalyzeResponse;
 import com.itheima.backend.model.vo.space.analyze.SpaceUsageAnalyzeResponse;
 import com.itheima.backend.service.SpaceAnalyzeService;
 import com.itheima.backend.service.UserService;
@@ -48,6 +50,13 @@ public class SpaceAnalyzeController {
         ThrowUtils.throwIf(spaceCategoryAnalyzeRequest == null, ErrorCode.PARAM_ERROR);
         User loginUser = userService.getLoginUser(request);
         List<SpaceCategoryAnalyzeResponse> resultList = spaceAnalyzeService.getSpaceCategoryAnalyze(spaceCategoryAnalyzeRequest, loginUser);
+        return ResultUtils.success(resultList);
+    }
+    @PostMapping("/tag")
+    public BaseResponse<List<SpaceTagAnalyzeResponse>> getSpaceTagAnalyze(@RequestBody SpaceTagAnalyzeRequest spaceTagAnalyzeRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceTagAnalyzeRequest == null, ErrorCode.PARAM_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        List<SpaceTagAnalyzeResponse> resultList = spaceAnalyzeService.getSpaceTagAnalyze(spaceTagAnalyzeRequest, loginUser);
         return ResultUtils.success(resultList);
     }
 
