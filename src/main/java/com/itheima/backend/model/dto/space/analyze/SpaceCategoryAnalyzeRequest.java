@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SpaceUsageAnalyzeRequest extends SpaceAnalyzeRequest implements Serializable {
+public class SpaceCategoryAnalyzeRequest extends SpaceAnalyzeRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 }

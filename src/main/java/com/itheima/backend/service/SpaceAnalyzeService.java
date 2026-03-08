@@ -1,10 +1,14 @@
 package com.itheima.backend.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.itheima.backend.model.dto.space.analyze.SpaceCategoryAnalyzeRequest;
 import com.itheima.backend.model.dto.space.analyze.SpaceUsageAnalyzeRequest;
 import com.itheima.backend.model.entity.Space;
 import com.itheima.backend.model.entity.User;
+import com.itheima.backend.model.vo.space.analyze.SpaceCategoryAnalyzeResponse;
 import com.itheima.backend.model.vo.space.analyze.SpaceUsageAnalyzeResponse;
+
+import java.util.List;
 
 public interface SpaceAnalyzeService extends IService<Space> {
     /**
@@ -15,4 +19,6 @@ public interface SpaceAnalyzeService extends IService<Space> {
      * @return 空间使用分析响应
      */
     SpaceUsageAnalyzeResponse getSpaceUsageAnalyze(SpaceUsageAnalyzeRequest spaceUsageAnalyzeRequest, User loginUser);
+
+    List<SpaceCategoryAnalyzeResponse> getSpaceCategoryAnalyze(SpaceCategoryAnalyzeRequest spaceCategoryAnalyzeRequest, User loginUser);
 }

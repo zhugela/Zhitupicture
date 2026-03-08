@@ -18,3 +18,5 @@ alter table space add column space_type tinyint default 0 not null comment '空�
 
 ALTER TABLE picture
     ADD COLUMN picColor varchar(16) null comment '图片主色调';
+
+SHOW COLUMNS FROM picture;
