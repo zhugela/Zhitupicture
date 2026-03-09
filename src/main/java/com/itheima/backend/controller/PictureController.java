@@ -64,8 +64,6 @@ public class PictureController {
 
     @Resource
     private SpaceService spaceService;
-    @Resource
-    private ImageSearchApiFacade imageSearchApiFacade;
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;

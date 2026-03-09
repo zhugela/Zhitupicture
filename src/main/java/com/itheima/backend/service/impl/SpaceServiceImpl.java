@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.itheima.backend.exception.BusinessException;
 import com.itheima.backend.exception.ErrorCode;
 import com.itheima.backend.exception.ThrowUtils;
+import com.itheima.backend.manager.sharding.DynamicShardingManager;
 import com.itheima.backend.mapper.SpaceMapper;
 import com.itheima.backend.model.dto.space.SpaceAddRequest;
 import com.itheima.backend.model.dto.space.SpaceQueryRequest;
@@ -54,6 +55,11 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
 
     @Resource
     private TransactionTemplate transactionTemplate;
+    @Resource
+    @Lazy
+    private DynamicShardingManager dynamicShardingManager;
+
+
 
     @Override
     public void validSpace(Space space, boolean add) {
@@ -206,18 +212,20 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space> implements
                 boolean result = this.save(space);
                 ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "保存空间到数据库失败");
 
-                // 团队空间自动添加管理员成员
-                if (SpaceTypeEnum.TEAM.getValue() == space.getSpaceType()) {
+                // 如果是团队空间，关联新增团队成员记录
+                if (SpaceTypeEnum.TEAM.getValue() == spaceAddRequest.getSpaceType()) {
                     SpaceUser spaceUser = new SpaceUser();
                     spaceUser.setSpaceId(space.getId());
                     spaceUser.setUserId(userId);
                     spaceUser.setSpaceRole(SpaceRoleEnum.ADMIN.getValue());
-
                     result = spaceUserService.save(spaceUser);
                     ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                 }
-
+// 创建分表
+                dynamicShardingManager.createSpacePictureTable(space);
+// 返回新写入的数据 id
                 return space.getId();
+
             });
 
             return Optional.ofNullable(newSpaceId).orElse(-1L);

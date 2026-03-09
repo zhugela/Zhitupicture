@@ -154,10 +154,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
         // 构建图片信息
         Picture picture = new Picture();
 
-
-
-        picture.setSpaceId(spaceId);
-
         String picName = uploadPictureResult.getPicName();
         if (pictureUploadRequest != null && StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
             picName = pictureUploadRequest.getPicName();
@@ -172,10 +168,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
         picture.setPicFormat(uploadPictureResult.getPicFormat());
         picture.setUserId(loginUser.getId());
-        // 设置空间 ID
-        if (pictureUploadRequest != null && pictureUploadRequest.getSpaceId() != null) {
-            picture.setSpaceId(pictureUploadRequest.getSpaceId());
-        }
+        
+        // 【关键修改】处理分表路由字段 spaceId：公共图库统一设为 0
+        Long finalSpaceId = handleSpaceId(spaceId);
+        picture.setSpaceId(finalSpaceId);
         fillReviewParams(picture, loginUser);
         picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
         // 操作数据库
@@ -186,12 +182,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             picture.setEditTime(new Date());
         }
 // 开启事务
-        Long finalSpaceId = spaceId;
+        Long finalSpaceIdValue = finalSpaceId;
         Picture finalOldPicture = oldPicture;
         transactionTemplate.execute(status -> {
             boolean result = this.saveOrUpdate(picture);
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
-            if (finalSpaceId != null) {
+            if (finalSpaceIdValue != null && finalSpaceIdValue > 0) {
                 long sizeDelta = picture.getPicSize();
                 long countDelta = 1;
                 if (finalOldPicture != null) {
@@ -199,7 +195,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
                     countDelta = 0;
                 }
                 boolean update = spaceService.lambdaUpdate()
-                        .eq(Space::getId, finalSpaceId)
+                        .eq(Space::getId, finalSpaceIdValue)
                         .setSql("totalSize = totalSize + " + sizeDelta)
                         .setSql("totalCount = totalCount + " + countDelta)
                         .update();
@@ -208,6 +204,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             return picture;
         });
         return PictureVO.objToVo(picture);
+    }
+
+    /**
+     * 处理分表路由字段 spaceId：将 null 转换为 0（公共图库）
+     * @param spaceId 原始空间 ID
+     * @return 规范化的空间 ID（null→0, 其他保持不变）
+     */
+    private Long handleSpaceId(Long spaceId) {
+        return spaceId == null ? 0L : spaceId;
     }
 
     @Override
@@ -254,8 +259,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
 
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
-        queryWrapper.eq(ObjUtil.isNotEmpty(spaceId), "space_id", spaceId);
-        queryWrapper.isNull(BooleanUtil.isTrue(nullSpaceId), "space_id");
+        // 【关键修改】分表路由字段处理：nullSpaceId 改为查询 spaceId = 0（公共图库）
+        if (BooleanUtil.isTrue(nullSpaceId)) {
+            queryWrapper.eq("space_id", 0L);
+        } else if (ObjUtil.isNotEmpty(spaceId)) {
+            queryWrapper.eq("space_id", spaceId);
+        }
         queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
         queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
         queryWrapper.like(StrUtil.isNotBlank(picFormat), "picFormat", picFormat);
@@ -454,7 +463,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
     @Override
     public void checkPictureAuth(User loginUser, Picture picture) {
         Long spaceId = picture.getSpaceId();
-        if (spaceId == null) {
+        // 【关键修改】分表后公共图库 spaceId = 0，不再是 null
+        if (spaceId == null || spaceId == 0L) {
             // 公共图库，仅本人或管理员可操作
             if (!picture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
@@ -482,7 +492,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture> impl
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
             // 释放额度
             Long spaceId = oldPicture.getSpaceId();
-            if (spaceId != null) {
+            // 【关键修改】分表后公共图库 spaceId = 0，不需要更新空间额度
+            if (spaceId != null && spaceId > 0) {
                 boolean update = spaceService.lambdaUpdate()
                         .eq(Space::getId, spaceId)
                         .setSql("totalSize = totalSize - " + oldPicture.getPicSize())
